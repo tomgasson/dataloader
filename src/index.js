@@ -17,6 +17,7 @@ type BatchLoadFn<K, V> = (keys: Array<K>) => Promise<Array<V | Error>>;
 type Options<K, V> = {
   batch?: boolean;
   maxBatchSize?: number;
+  batchTick?: boolean;
   cache?: boolean;
   cacheKeyFn?: (key: any) => any;
   cacheMap?: CacheMap<K, Promise<V>>;
@@ -79,6 +80,7 @@ export default class DataLoader<K, V> {
     var options = this._options;
     var shouldBatch = !options || options.batch !== false;
     var shouldCache = !options || options.cache !== false;
+    var shouldBatchTick = options ? !!options.batchTick : false;
     var cacheKeyFn = options && options.cacheKeyFn;
     var cacheKey = cacheKeyFn ? cacheKeyFn(key) : key;
 
@@ -225,12 +227,22 @@ function dispatchQueue<K, V>(loader: DataLoader<K, V>) {
   // If a maxBatchSize was provided and the queue is longer, then segment the
   // queue into multiple batches, otherwise treat the queue as a single batch.
   var maxBatchSize = loader._options && loader._options.maxBatchSize;
+  var shouldBatchTick = loader._options && loader._options.batchTick;
   if (maxBatchSize && maxBatchSize > 0 && maxBatchSize < queue.length) {
     for (var i = 0; i < queue.length / maxBatchSize; i++) {
-      dispatchQueueBatch(
-        loader,
-        queue.slice(i * maxBatchSize, (i + 1) * maxBatchSize)
-      );
+      if (shouldBatchTick){
+        setTimeout(((i) => () => {
+          dispatchQueueBatch(
+            loader,
+            queue.slice(i * maxBatchSize, (i + 1) * maxBatchSize)
+          );
+        })(i), i*18)
+      } else {
+        dispatchQueueBatch(
+          loader,
+          queue.slice(i * maxBatchSize, (i + 1) * maxBatchSize)
+        );
+      }
     }
   } else {
     dispatchQueueBatch(loader, queue);
