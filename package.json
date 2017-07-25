@@ -72,6 +72,14 @@
     "preversion": ". ./resources/checkgit.sh && npm test",
     "prepublish": ". ./resources/prepublish.sh"
   },
+  "files": [
+    "index.js",
+    "index.js.flow",
+    "index.d.ts",
+    "README.md",
+    "LICENSE",
+    "PATENTS"
+  ],
   "devDependencies": {
     "babel-cli": "6.14.0",
     "babel-eslint": "6.1.2",
